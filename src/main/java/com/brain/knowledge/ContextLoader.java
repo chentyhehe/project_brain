@@ -83,6 +83,21 @@ public final class ContextLoader {
         }
     }
 
+    public List<ModuleInfo> findRelevantModules(Path projectRoot, String taskDescription) throws IOException {
+        return matchModules(listModules(projectRoot.toAbsolutePath().normalize()), taskDescription);
+    }
+
+    public String readModuleSpec(Path projectRoot, String moduleName) throws IOException {
+        Path spec = projectRoot.toAbsolutePath().normalize()
+                .resolve(".knowledge/modules")
+                .resolve(moduleName)
+                .resolve("SPEC.md");
+        if (!Files.isRegularFile(spec)) {
+            return "未找到 SPEC.md。";
+        }
+        return Files.readString(spec, StandardCharsets.UTF_8);
+    }
+
     private List<ModuleInfo> matchModules(List<ModuleInfo> modules, String taskDescription) {
         String text = normalize(taskDescription);
         List<ModuleInfo> matched = new ArrayList<>();

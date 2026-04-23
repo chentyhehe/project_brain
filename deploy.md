@@ -58,6 +58,7 @@ java -jar target/project-brain-0.1.0.jar
 
 - `init_project`
 - `init_project_llm`
+- `clarify_task`
 - `start_task`
 - `finish_task`
 - `list_modules`
@@ -82,6 +83,7 @@ args = [
 
 - `init_project` 初始化项目知识库
 - `init_project_llm` 生成交给当前 AI 助手执行的初始化 prompt
+- `clarify_task` 在需求模糊时返回任务澄清上下文或任务确认单草稿
 - `start_task` 加载任务相关上下文
 - `finish_task` 回流任务知识
 - `list_modules` 查看已识别模块
@@ -221,6 +223,43 @@ AGENTS.md
 - 命中模块下的所有 `.md` 文件
 
 返回拼装好的上下文字符串，供 AI 工具继续执行任务。
+
+### clarify_task
+
+在需求模糊时读取模块列表和相关 `SPEC.md`，返回给模型用于提问和整理任务边界。
+
+参数：
+
+- `raw_input`：用户原始需求
+- `auto_confirm`：为 `true` 时直接输出“任务确认单”草稿
+
+典型用法：
+
+```json
+{
+  "project_path": "F:/path/to/your/project",
+  "raw_input": "把支付那边优化一下"
+}
+```
+
+返回内容会包含：
+
+- 当前模块列表
+- 初步相关模块
+- 相关模块的 `SPEC.md`
+- 引导模型继续提出 2-3 个确认问题
+
+脚本场景可使用：
+
+```json
+{
+  "project_path": "F:/path/to/your/project",
+  "raw_input": "把支付那边优化一下",
+  "auto_confirm": true
+}
+```
+
+此时会直接返回“任务确认单”草稿，供后续作为 `start_task` 的入参。
 
 ### finish_task
 

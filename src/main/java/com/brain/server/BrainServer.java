@@ -1,6 +1,7 @@
 package com.brain.server;
 
 import com.brain.tools.BrainTool;
+import com.brain.tools.ClarifyTaskTool;
 import com.brain.tools.FinishTaskTool;
 import com.brain.tools.GetFileTool;
 import com.brain.tools.InitProjectTool;
@@ -17,6 +18,7 @@ import java.util.List;
 public final class BrainServer {
     private final List<BrainTool> tools = List.of(
             new InitProjectTool(),
+            new ClarifyTaskTool(),
             new StartTaskTool(),
             new FinishTaskTool(),
             new ListModulesTool(),
@@ -30,7 +32,12 @@ public final class BrainServer {
                 .serverInfo("project-brain", "0.1.0")
                 .capabilities(McpSchema.ServerCapabilities.builder().tools(false).build())
                 .instructions("""
-                        Project Brain 鎻愪緵椤圭洰鐭ヨ瘑绠＄悊宸ュ叿銆?                        瀹冧笉浼氳皟鐢?LLM锛屼篃涓嶄細璁块棶澶栭儴 HTTP 鏈嶅姟銆?                        姣忎釜椤圭洰鍏堣皟鐢ㄤ竴娆?init_project锛涘鐞嗛」鐩换鍔″墠璋冪敤 start_task锛?                        瀹屾垚鏈夋剰涔夌殑浠ｇ爜淇敼鎴栨灦鏋勫喅绛栧悗璋冪敤 finish_task銆?                        """);
+                        Project Brain 提供项目知识管理工具。
+                        它不会调用大模型，也不会访问外部 HTTP 服务。
+                        每个项目通常先调用一次 init_project。
+                        需求模糊时可调用 clarify_task 生成任务澄清上下文。
+                        项目任务开始前调用 start_task，任务完成并形成稳定知识后调用 finish_task。
+                        """);
 
         for (BrainTool tool : tools) {
             server.toolCall(tool.tool(), (exchange, request) -> tool.call(request.arguments()));

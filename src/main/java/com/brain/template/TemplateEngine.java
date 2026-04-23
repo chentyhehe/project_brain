@@ -69,6 +69,19 @@ public final class TemplateEngine {
                    - 如果满足“必须回流”的条件，任务完成后调用 finish_task。
                    - 如果满足“不需要回流”的条件，不调用 finish_task。
 
+                ### clarify_task 触发规则
+                以下情况需要先调用 clarify_task，再决定是否执行 start_task：
+                - 需求描述少于 20 字且包含模糊词，例如“优化”“改一下”“处理一下”“看看”。
+                - 任务可能涉及多个模块，但用户没有说明清晰边界。
+                - 用户需求可能与模块 SPEC.md 中已有业务规则冲突。
+
+                以下情况不需要调用 clarify_task，可直接进入 start_task：
+                - 需求已经具体，例如明确的缺陷、明确的字段、明确的方法、明确的接口。
+                - 用户明确表示“直接做”“不用确认”。
+
+                clarify_task 返回模块列表和相关 SPEC.md 内容，供模型向用户提出 2-3 个确认问题。
+                用户确认后，应先整理成“任务确认单”，再将任务确认单作为 start_task 的入参。
+
                 ### start_task 调用规则
                 每个项目相关任务开始时，默认调用一次 start_task。
 
