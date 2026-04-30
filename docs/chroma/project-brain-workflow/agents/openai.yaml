@@ -1,0 +1,4 @@
+interface:
+  display_name: "Project Brain Workflow"
+  short_description: "约束 project-brain MCP 的调用顺序、降级判断与恢复流程"
+  default_prompt: "使用 $project-brain-workflow 处理当前项目任务：先调用 start_task，再根据 store_mode/store_status 判断是否需要 record_plan、sync_to_chroma、compact_knowledge、restore_knowledge、restore_chroma 或 rebuild_knowledge。"

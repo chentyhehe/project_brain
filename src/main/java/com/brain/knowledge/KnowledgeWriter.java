@@ -1,5 +1,6 @@
 package com.brain.knowledge;
 
+import com.brain.knowledge.backup.KnowledgeLocalWriter;
 import com.brain.scanner.ModuleInfo;
 import com.brain.scanner.ProjectScanResult;
 import com.brain.scanner.ProjectType;
@@ -15,6 +16,7 @@ import java.util.List;
 public final class KnowledgeWriter {
     private final TemplateEngine templates = new TemplateEngine();
     private final StaticKnowledgeAnalyzer analyzer = new StaticKnowledgeAnalyzer();
+    private final KnowledgeLocalWriter localWriter = new KnowledgeLocalWriter();
 
     public List<Path> initialize(ProjectScanResult project) throws IOException {
         return initialize(project, false);
@@ -46,6 +48,7 @@ public final class KnowledgeWriter {
             }
         }
 
+        written.addAll(localWriter.snapshotKnowledge(root));
         return written;
     }
 

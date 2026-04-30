@@ -37,6 +37,20 @@ final class ToolSupport {
         return property;
     }
 
+    static Map<String, Object> integerProperty(String description) {
+        Map<String, Object> property = new LinkedHashMap<>();
+        property.put("type", "integer");
+        property.put("description", description);
+        return property;
+    }
+
+    static Map<String, Object> booleanProperty(String description) {
+        Map<String, Object> property = new LinkedHashMap<>();
+        property.put("type", "boolean");
+        property.put("description", description);
+        return property;
+    }
+
     static McpSchema.CallToolResult textResult(String text) {
         return McpSchema.CallToolResult.builder()
                 .content(List.of(new McpSchema.TextContent(text)))
@@ -79,6 +93,17 @@ final class ToolSupport {
             throw new IllegalArgumentException(name + " 必须是布尔值。");
         }
         return bool;
+    }
+
+    static int optionalInt(Map<String, Object> args, String name, int defaultValue) {
+        Object value = args == null ? null : args.get(name);
+        if (value == null) {
+            return defaultValue;
+        }
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        throw new IllegalArgumentException(name + " 必须是整数。");
     }
 
     static Path projectPath(Map<String, Object> args) {

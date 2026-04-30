@@ -1,0 +1,4 @@
+﻿interface:
+  display_name: "Project Brain Autostart"
+  short_description: "Auto-start project-brain MCP for project tasks"
+  default_prompt: "Use $project-brain-autostart for repository tasks: if the request is about project code, architecture, modules, config, or debugging, call project-brain start_task first, then decide whether to use record_plan, finish_task, or Chroma-related tools."

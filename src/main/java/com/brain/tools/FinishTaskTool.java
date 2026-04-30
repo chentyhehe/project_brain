@@ -1,6 +1,7 @@
 package com.brain.tools;
 
-import com.brain.knowledge.FlowbackWriter;
+import com.brain.knowledge.FinishTaskResult;
+import com.brain.knowledge.FinishTaskService;
 import io.modelcontextprotocol.spec.McpSchema;
 
 import java.nio.file.Path;
@@ -8,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 public final class FinishTaskTool implements BrainTool {
-    private final FlowbackWriter writer = new FlowbackWriter();
+    private final FinishTaskService service = new FinishTaskService();
 
     @Override
     public McpSchema.Tool tool() {
@@ -19,9 +20,12 @@ public final class FinishTaskTool implements BrainTool {
                 "modules_affected", ToolSupport.stringArrayProperty("受影响模块名称。"),
                 "project_path", ToolSupport.stringProperty("可选项目根目录。")
         );
-        return ToolSupport.tool("finish_task", "写入任务记录并生成知识回流提示词",
-                "写入基础任务记录，并生成交给当前 AI 做知识回流沉淀检查的中文 prompt；工具本身不调用大模型。",
-                props, List.of("summary", "decisions", "gotchas", "modules_affected"));
+        return ToolSupport.tool(
+                "finish_task",
+                "写入任务记录并生成知识回流提示词",
+                "写入基础任务记录，并在可用时触发 Chroma 补录，生成交给当前 AI 做知识回流沉淀检查的中文 prompt；工具本身不调用大模型。",
+                props,
+                List.of("summary", "decisions", "gotchas", "modules_affected"));
     }
 
     @Override
@@ -32,15 +36,20 @@ public final class FinishTaskTool implements BrainTool {
             List<String> decisions = ToolSupport.stringList(arguments, "decisions");
             String gotchas = ToolSupport.optionalString(arguments, "gotchas");
             List<String> modulesAffected = ToolSupport.stringList(arguments, "modules_affected");
-            List<Path> written = writer.write(projectPath, summary, decisions, gotchas, modulesAffected);
-            return ToolSupport.textResult(buildPrompt(projectPath, summary, decisions, gotchas, modulesAffected, written));
+            FinishTaskResult result = service.finish(projectPath, summary, decisions, gotchas, modulesAffected);
+            return ToolSupport.textResult(buildPrompt(projectPath, summary, decisions, gotchas, modulesAffected, result));
         } catch (Exception exception) {
             return ToolSupport.errorResult(exception);
         }
     }
 
-    private String buildPrompt(Path projectPath, String summary, List<String> decisions, String gotchas,
-                               List<String> modulesAffected, List<Path> written) {
+    private String buildPrompt(
+            Path projectPath,
+            String summary,
+            List<String> decisions,
+            String gotchas,
+            List<String> modulesAffected,
+            FinishTaskResult result) {
         return """
                 finish_task 已完成本地静态写入。请作为当前项目的代码分析助手，继续判断是否需要沉淀更多知识。
                 project-brain 只写入基础记录并生成本提示词，不会调用大模型。
@@ -52,6 +61,13 @@ public final class FinishTaskTool implements BrainTool {
                 - gotchas：%s
                 - modules_affected：%s
 
+                ## Chroma 补录
+                - scanned_files: %s
+                - pending_files: %s
+                - synced_files: %s
+                - skipped_files: %s
+                - errors: %s
+
                 ## 已写入文件
                 %s
 
@@ -62,9 +78,17 @@ public final class FinishTaskTool implements BrainTool {
                 4. 是否需要更新 api.md 的接口契约
                 5. 哪些内容不应回流，以及原因
                 """.formatted(
-                projectPath.toAbsolutePath().normalize(), summary, listOrNone(decisions),
+                projectPath.toAbsolutePath().normalize(),
+                summary,
+                listOrNone(decisions),
                 gotchas == null || gotchas.isBlank() ? "无" : gotchas,
-                listOrNone(modulesAffected), formatPaths(written));
+                listOrNone(modulesAffected),
+                result.syncResult().scannedFiles(),
+                result.syncResult().pendingFiles(),
+                result.syncResult().syncedFiles(),
+                result.syncResult().skippedFiles(),
+                result.syncResult().errors().isEmpty() ? "[]" : result.syncResult().errors(),
+                formatPaths(result.writtenPaths()));
     }
 
     private String listOrNone(List<String> values) {
